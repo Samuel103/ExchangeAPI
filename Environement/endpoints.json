@@ -1,0 +1,7 @@
+[
+  {
+    "path": "/hello",
+    "method": "GET",
+    "handler": "Test"
+  }
+]

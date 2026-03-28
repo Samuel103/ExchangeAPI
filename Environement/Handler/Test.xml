@@ -1,0 +1,16 @@
+<Handler 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="../Environement.xsd">
+
+
+    <Set Var="customers" Value=""/>
+
+    <SqlQuery Source="MyDB1"
+              Query="SELECT * from CUSTOMER"
+              Var="customers" />
+
+    <Return Status="200">
+        <Data Var="customers" />
+    </Return>
+
+</Handler>

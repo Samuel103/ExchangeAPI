@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:element name="Handler">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+
+          <!-- Affiche un message dans les logs du serveur. Supporte {{varName}}. -->
+          <xs:element name="Log">
+            <xs:complexType>
+              <xs:attribute name="Message" type="xs:string" use="required"/>
+            </xs:complexType>
+          </xs:element>
+
+          <!-- Assigne une valeur statique (ou interpolée via {{varName}}) à une variable. -->
+          <xs:element name="Set">
+            <xs:complexType>
+              <xs:attribute name="Var"   type="xs:string" use="required"/>
+              <xs:attribute name="Value" type="xs:string" use="required"/>
+            </xs:complexType>
+          </xs:element>
+
+          <!-- Exécute une requête SQL et stocke les résultats dans une variable (liste de lignes). -->
+          <!-- La query supporte les paramètres via {{varName}} (transformés en paramètres SQL sécurisés). -->
+          <xs:element name="SqlQuery">
+            <xs:complexType>
+              <xs:attribute name="Source" type="xs:string" use="required"/>
+              <xs:attribute name="Query"  type="xs:string" use="required"/>
+              <xs:attribute name="Var"    type="xs:string" use="required"/>
+            </xs:complexType>
+          </xs:element>
+
+          <!-- Lit le contenu d'un fichier entier et le stocke dans une variable. -->
+          <xs:element name="FileRead">
+            <xs:complexType>
+              <xs:attribute name="Source" type="xs:string" use="required"/>
+              <xs:attribute name="Var"    type="xs:string" use="required"/>
+            </xs:complexType>
+          </xs:element>
+
+          <!-- Retourne la réponse HTTP. Arrête l'exécution des steps suivants. -->
+          <!-- <Data Var="nomVariable"/> référence une variable du contexte. -->
+          <xs:element name="Return">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="Data" minOccurs="0" maxOccurs="1">
+                  <xs:complexType>
+                    <xs:attribute name="Var" type="xs:string" use="required"/>
+                  </xs:complexType>
+                </xs:element>
+              </xs:sequence>
+              <xs:attribute name="Status" type="xs:int" use="optional"/>
+            </xs:complexType>
+          </xs:element>
+
+        </xs:choice>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>
