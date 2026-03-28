@@ -6,13 +6,15 @@
     <!-- Les champs sont disponibles directement : {{name}}, {{email}}, etc. -->
     <BodyRead Var="body" />
 
-    <!-- Option A : insérer en base de données -->
-    <SqlExecute Source="MyDB1"
-                Query="INSERT INTO Customer (NAME) VALUES ({{Name}})"
-                Var="rowsAffected" />
-
-    <!-- Option B : ajouter au CSV (commenter l'une ou l'autre selon le besoin) -->
-    <!-- <CsvAppend Source="MyFile1" Row="body" Delimiter="," /> -->
+    <SqlExecute Source="MyDB1" Var="rowsAffected">
+      <Query>
+        <Insert Table="Customer">
+          <Values>
+            <NAME>{{Name}}</NAME>
+          </Values>
+        </Insert>
+      </Query>
+    </SqlExecute>
 
     <Return Status="201">
         <Data Var="body" />

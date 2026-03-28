@@ -16,17 +16,154 @@
           <!-- Assigne une valeur statique (ou interpolée via {{varName}}) à une variable. -->
           <xs:element name="Set">
             <xs:complexType>
-              <xs:attribute name="Var"   type="xs:string" use="required"/>
-              <xs:attribute name="Value" type="xs:string" use="required"/>
+              <xs:sequence minOccurs="0" maxOccurs="1">
+                <xs:choice minOccurs="0" maxOccurs="1">
+                  <xs:element name="Value" type="valueExpression"/>
+                  <xs:element name="value" type="valueExpression"/>
+                </xs:choice>
+              </xs:sequence>
+              <xs:attribute name="Name"  type="xs:string" use="optional"/>
+              <xs:attribute name="Var"   type="xs:string" use="optional"/>
+              <xs:attribute name="Value" type="xs:string" use="optional"/>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="set">
+            <xs:complexType>
+              <xs:sequence minOccurs="0" maxOccurs="1">
+                <xs:choice minOccurs="0" maxOccurs="1">
+                  <xs:element name="Value" type="valueExpression"/>
+                  <xs:element name="value" type="valueExpression"/>
+                </xs:choice>
+              </xs:sequence>
+              <xs:attribute name="Name"  type="xs:string" use="optional"/>
+              <xs:attribute name="Var"   type="xs:string" use="optional"/>
+              <xs:attribute name="Value" type="xs:string" use="optional"/>
+              <xs:attribute name="name"  type="xs:string" use="optional"/>
+              <xs:attribute name="var"   type="xs:string" use="optional"/>
+              <xs:attribute name="value" type="xs:string" use="optional"/>
+            </xs:complexType>
+          </xs:element>
+
+          <!-- Declaration de variables typees. -->
+          <xs:element name="int" type="typedVariable"/>
+          <xs:element name="Int" type="typedVariable"/>
+          <xs:element name="string" type="typedVariable"/>
+          <xs:element name="String" type="typedVariable"/>
+          <xs:element name="datetime" type="typedVariable"/>
+          <xs:element name="DateTime" type="typedVariable"/>
+          <xs:element name="bool" type="typedVariable"/>
+          <xs:element name="Bool" type="typedVariable"/>
+          <xs:element name="decimal" type="typedVariable"/>
+          <xs:element name="Decimal" type="typedVariable"/>
+          <xs:element name="double" type="typedVariable"/>
+          <xs:element name="Double" type="typedVariable"/>
+          <xs:element name="long" type="typedVariable"/>
+          <xs:element name="Long" type="typedVariable"/>
+
+          <!-- Utilitaires variables -->
+          <xs:element name="StringToInt">
+            <xs:complexType>
+              <xs:attribute name="Name" type="xs:string" use="required"/>
+              <xs:attribute name="From" type="xs:string" use="required"/>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="stringtoint">
+            <xs:complexType>
+              <xs:attribute name="Name" type="xs:string" use="optional"/>
+              <xs:attribute name="From" type="xs:string" use="optional"/>
+              <xs:attribute name="name" type="xs:string" use="optional"/>
+              <xs:attribute name="from" type="xs:string" use="optional"/>
+            </xs:complexType>
+          </xs:element>
+
+          <xs:element name="IntToString">
+            <xs:complexType>
+              <xs:attribute name="Name" type="xs:string" use="required"/>
+              <xs:attribute name="From" type="xs:string" use="required"/>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="inttostring">
+            <xs:complexType>
+              <xs:attribute name="Name" type="xs:string" use="optional"/>
+              <xs:attribute name="From" type="xs:string" use="optional"/>
+              <xs:attribute name="name" type="xs:string" use="optional"/>
+              <xs:attribute name="from" type="xs:string" use="optional"/>
+            </xs:complexType>
+          </xs:element>
+
+          <xs:element name="StringFormat">
+            <xs:complexType>
+              <xs:attribute name="Name" type="xs:string" use="required"/>
+              <xs:attribute name="Format" type="xs:string" use="required"/>
+              <xs:attribute name="Vars" type="xs:string" use="required"/>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="stringformat">
+            <xs:complexType>
+              <xs:attribute name="Name" type="xs:string" use="optional"/>
+              <xs:attribute name="Format" type="xs:string" use="optional"/>
+              <xs:attribute name="Vars" type="xs:string" use="optional"/>
+              <xs:attribute name="name" type="xs:string" use="optional"/>
+              <xs:attribute name="format" type="xs:string" use="optional"/>
+              <xs:attribute name="vars" type="xs:string" use="optional"/>
+            </xs:complexType>
+          </xs:element>
+
+          <xs:element name="StringSubstring">
+            <xs:complexType>
+              <xs:attribute name="Name" type="xs:string" use="required"/>
+              <xs:attribute name="From" type="xs:string" use="required"/>
+              <xs:attribute name="Start" type="xs:int" use="required"/>
+              <xs:attribute name="Length" type="xs:int" use="optional"/>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="stringsubstring">
+            <xs:complexType>
+              <xs:attribute name="Name" type="xs:string" use="optional"/>
+              <xs:attribute name="From" type="xs:string" use="optional"/>
+              <xs:attribute name="Start" type="xs:int" use="optional"/>
+              <xs:attribute name="Length" type="xs:int" use="optional"/>
+              <xs:attribute name="name" type="xs:string" use="optional"/>
+              <xs:attribute name="from" type="xs:string" use="optional"/>
+              <xs:attribute name="start" type="xs:int" use="optional"/>
+              <xs:attribute name="length" type="xs:int" use="optional"/>
+            </xs:complexType>
+          </xs:element>
+
+          <xs:element name="StringToDateTime">
+            <xs:complexType>
+              <xs:attribute name="Name" type="xs:string" use="required"/>
+              <xs:attribute name="From" type="xs:string" use="required"/>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="stringtodatetime">
+            <xs:complexType>
+              <xs:attribute name="Name" type="xs:string" use="optional"/>
+              <xs:attribute name="From" type="xs:string" use="optional"/>
+              <xs:attribute name="name" type="xs:string" use="optional"/>
+              <xs:attribute name="from" type="xs:string" use="optional"/>
             </xs:complexType>
           </xs:element>
 
           <!-- Exécute une requête SQL et stocke les résultats dans une variable (liste de lignes). -->
-          <!-- La query supporte les paramètres via {{varName}} (transformés en paramètres SQL sécurisés). -->
+          <!-- Supporte Query="..." (string) ou une balise <Query> structurée. -->
           <xs:element name="SqlQuery">
             <xs:complexType>
+              <xs:sequence minOccurs="0" maxOccurs="1">
+                <xs:element name="Query" minOccurs="0" maxOccurs="1">
+                  <xs:complexType mixed="true">
+                    <xs:sequence minOccurs="0" maxOccurs="unbounded">
+                      <xs:choice minOccurs="0" maxOccurs="1">
+                        <xs:element name="String" type="xs:string"/>
+                        <xs:element name="Insert" type="xs:anyType"/>
+                        <xs:element name="Select" type="xs:anyType"/>
+                      </xs:choice>
+                    </xs:sequence>
+                  </xs:complexType>
+                </xs:element>
+              </xs:sequence>
               <xs:attribute name="Source" type="xs:string" use="required"/>
-              <xs:attribute name="Query"  type="xs:string" use="required"/>
+              <xs:attribute name="Query"  type="xs:string" use="optional"/>
               <xs:attribute name="Var"    type="xs:string" use="required"/>
             </xs:complexType>
           </xs:element>
@@ -52,12 +189,25 @@
             </xs:element>
 
             <!-- Exécute du SQL sans résultat (INSERT, UPDATE, DELETE). -->
-            <!-- {{varName}} dans Query devient un paramètre SQL sécurisé. -->
+            <!-- Supporte Query="..." (string) ou une balise <Query> structurée. -->
             <!-- Var optionnel : reçoit le nombre de lignes affectées. -->
             <xs:element name="SqlExecute">
               <xs:complexType>
+                <xs:sequence minOccurs="0" maxOccurs="1">
+                  <xs:element name="Query" minOccurs="0" maxOccurs="1">
+                    <xs:complexType mixed="true">
+                      <xs:sequence minOccurs="0" maxOccurs="unbounded">
+                        <xs:choice minOccurs="0" maxOccurs="1">
+                          <xs:element name="String" type="xs:string"/>
+                          <xs:element name="Insert" type="xs:anyType"/>
+                          <xs:element name="Select" type="xs:anyType"/>
+                        </xs:choice>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+                </xs:sequence>
                 <xs:attribute name="Source" type="xs:string" use="required"/>
-                <xs:attribute name="Query"  type="xs:string" use="required"/>
+                <xs:attribute name="Query"  type="xs:string" use="optional"/>
                 <xs:attribute name="Var"    type="xs:string" use="optional"/>
               </xs:complexType>
             </xs:element>
@@ -91,5 +241,58 @@
       </xs:sequence>
     </xs:complexType>
   </xs:element>
+
+  <xs:complexType name="typedVariable" mixed="true">
+    <xs:sequence minOccurs="0" maxOccurs="1">
+      <xs:element name="Value" type="valueExpression" minOccurs="0" maxOccurs="1"/>
+    </xs:sequence>
+    <xs:attribute name="Name" type="xs:string" use="required"/>
+    <xs:attribute name="Value" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="valueExpression" mixed="true">
+    <xs:sequence minOccurs="0" maxOccurs="unbounded">
+      <xs:choice minOccurs="0" maxOccurs="1">
+        <xs:element name="Get" type="getExpression"/>
+        <xs:element name="get" type="getExpression"/>
+        <xs:element name="StringFormat" type="stringFormatExpression"/>
+        <xs:element name="stringformat" type="stringFormatExpression"/>
+        <xs:element name="StringToInt" type="unaryExpression"/>
+        <xs:element name="stringtoint" type="unaryExpression"/>
+        <xs:element name="IntToString" type="unaryExpression"/>
+        <xs:element name="inttostring" type="unaryExpression"/>
+        <xs:element name="StringToDateTime" type="unaryExpression"/>
+        <xs:element name="stringtodatetime" type="unaryExpression"/>
+        <xs:element name="StringSubstring" type="substringExpression"/>
+        <xs:element name="stringsubstring" type="substringExpression"/>
+      </xs:choice>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="getExpression">
+    <xs:attribute name="Name" type="xs:string" use="required"/>
+    <xs:attribute name="name" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="stringFormatExpression" mixed="true">
+    <xs:sequence minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="Arg" type="valueExpression" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="Format" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="unaryExpression" mixed="true">
+    <xs:sequence minOccurs="0" maxOccurs="1">
+      <xs:element name="Arg" type="valueExpression" minOccurs="0" maxOccurs="1"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="substringExpression" mixed="true">
+    <xs:sequence minOccurs="0" maxOccurs="1">
+      <xs:element name="Arg" type="valueExpression" minOccurs="0" maxOccurs="1"/>
+    </xs:sequence>
+    <xs:attribute name="Start" type="xs:int" use="required"/>
+    <xs:attribute name="Length" type="xs:int" use="optional"/>
+  </xs:complexType>
 
 </xs:schema>

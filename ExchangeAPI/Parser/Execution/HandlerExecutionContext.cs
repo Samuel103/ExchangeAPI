@@ -9,6 +9,7 @@ public class HandlerExecutionContext
     public bool HasReturned { get; private set; }
 
     public Dictionary<string, object?> Variables { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> VariableTypes { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     public HttpRequest? HttpRequest { get; }
 
@@ -17,7 +18,26 @@ public class HandlerExecutionContext
         HttpRequest = httpRequest;
     }
 
-    public void SetVariable(string name, object? value) => Variables[name] = value;
+    public void DeclareVariable(string name, string typeName)
+    {
+        var normalized = VariableTypeConverter.NormalizeTypeName(typeName);
+        VariableTypes[name] = normalized;
+
+        if (!Variables.ContainsKey(name))
+        {
+            Variables[name] = null;
+        }
+    }
+
+    public void SetVariable(string name, object? value)
+    {
+        if (VariableTypes.TryGetValue(name, out var typeName))
+        {
+            value = VariableTypeConverter.ConvertValue(value, typeName);
+        }
+
+        Variables[name] = value;
+    }
 
     public object? GetVariable(string name) =>
         Variables.TryGetValue(name, out var v) ? v : null;

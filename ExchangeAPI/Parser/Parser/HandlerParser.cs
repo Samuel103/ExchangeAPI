@@ -25,44 +25,109 @@ public class HandlerParser : IHandlerParser
 
         foreach (var element in doc.Root.Elements())
         {
-            switch (element.Name.LocalName)
+            switch (element.Name.LocalName.ToLowerInvariant())
             {
-                case "Log":
+                case "log":
                     steps.Add(new LogStep
                     {
-                        Message = element.Attribute("Message")?.Value ?? string.Empty
+                        Message = GetAttribute(element, "Message") ?? string.Empty
                     });
                     break;
 
-                case "Set":
+                case "set":
+                    var setValueElement = GetChild(element, "Value");
+                    var setExpression = setValueElement?.Elements().FirstOrDefault();
+
                     steps.Add(new SetStep
                     {
-                        Variable = element.Attribute("Var")?.Value ?? string.Empty,
-                        ValueTemplate = element.Attribute("Value")?.Value
+                        Name = GetAttribute(element, "Name")
+                            ?? GetAttribute(element, "Var")
+                            ?? string.Empty,
+                        ValueTemplate = GetAttribute(element, "Value")
+                            ?? GetChildValue(element, "Value"),
+                        ValueExpression = setExpression is null ? null : new XElement(setExpression)
                     });
                     break;
 
-                case "SqlQuery":
-                    var sqlSource = element.Attribute("Source")?.Value ?? string.Empty;
+                case "int":
+                case "string":
+                case "datetime":
+                case "bool":
+                case "decimal":
+                case "double":
+                case "long":
+                    steps.Add(new DeclareVariableStep
+                    {
+                        TypeName = element.Name.LocalName,
+                        Name = GetAttribute(element, "Name") ?? string.Empty,
+                        InitialValueTemplate = GetAttribute(element, "Value") ?? GetChildValue(element, "Value")
+                    });
+                    break;
+
+                case "stringtoint":
+                    steps.Add(new StringToIntStep
+                    {
+                        Name = GetAttribute(element, "Name") ?? string.Empty,
+                        From = GetAttribute(element, "From") ?? string.Empty
+                    });
+                    break;
+
+                case "inttostring":
+                    steps.Add(new IntToStringStep
+                    {
+                        Name = GetAttribute(element, "Name") ?? string.Empty,
+                        From = GetAttribute(element, "From") ?? string.Empty
+                    });
+                    break;
+
+                case "stringformat":
+                    steps.Add(new StringFormatStep
+                    {
+                        Name = GetAttribute(element, "Name") ?? string.Empty,
+                        Format = GetAttribute(element, "Format") ?? GetChildValue(element, "Format") ?? string.Empty,
+                        Vars = GetAttribute(element, "Vars") ?? string.Empty
+                    });
+                    break;
+
+                case "stringsubstring":
+                    steps.Add(new StringSubstringStep
+                    {
+                        Name = GetAttribute(element, "Name") ?? string.Empty,
+                        From = GetAttribute(element, "From") ?? string.Empty,
+                        Start = ParseIntOrDefault(GetAttribute(element, "Start"), 0),
+                        Length = ParseNullableInt(GetAttribute(element, "Length"))
+                    });
+                    break;
+
+                case "stringtodatetime":
+                    steps.Add(new StringToDateTimeStep
+                    {
+                        Name = GetAttribute(element, "Name") ?? string.Empty,
+                        From = GetAttribute(element, "From") ?? string.Empty
+                    });
+                    break;
+
+                case "sqlquery":
+                    var sqlSource = GetAttribute(element, "Source") ?? string.Empty;
                     steps.Add(new SqlQueryStep(_sources.GetConnectionString(sqlSource))
                     {
                         Source = sqlSource,
-                        QueryTemplate = element.Attribute("Query")?.Value ?? string.Empty,
-                        OutputVariable = element.Attribute("Var")?.Value ?? string.Empty
+                        QueryTemplate = ParseSqlTemplate(element),
+                        OutputVariable = GetAttribute(element, "Var") ?? string.Empty
                     });
                     break;
 
-                case "FileRead":
-                    var fileSource = element.Attribute("Source")?.Value ?? string.Empty;
+                case "fileread":
+                    var fileSource = GetAttribute(element, "Source") ?? string.Empty;
                     steps.Add(new FileReadStep(_sources.GetFilePath(fileSource))
                     {
                         Source = fileSource,
-                        OutputVariable = element.Attribute("Var")?.Value ?? string.Empty,
-                        Delimiter = element.Attribute("Delimiter")?.Value
+                        OutputVariable = GetAttribute(element, "Var") ?? string.Empty,
+                        Delimiter = GetAttribute(element, "Delimiter")
                     });
                     break;
 
-                case "Return":
+                case "return":
                         steps.Add(new ReturnStep
                         {
                             StatusCode = ParseStatusCode(element),
@@ -70,30 +135,30 @@ public class HandlerParser : IHandlerParser
                         });
                         break;
 
-                    case "BodyRead":
+                    case "bodyread":
                     steps.Add(new BodyReadStep
                     {
-                        OutputVariable = element.Attribute("Var")?.Value ?? "body"
+                        OutputVariable = GetAttribute(element, "Var") ?? "body"
                     });
                     break;
 
-                case "SqlExecute":
-                    var sqlExecSource = element.Attribute("Source")?.Value ?? string.Empty;
+                case "sqlexecute":
+                    var sqlExecSource = GetAttribute(element, "Source") ?? string.Empty;
                     steps.Add(new SqlExecuteStep(_sources.GetConnectionString(sqlExecSource))
                     {
                         Source = sqlExecSource,
-                        QueryTemplate = element.Attribute("Query")?.Value ?? string.Empty,
-                        OutputVariable = element.Attribute("Var")?.Value
+                        QueryTemplate = ParseSqlTemplate(element),
+                        OutputVariable = GetAttribute(element, "Var")
                     });
                     break;
 
-                case "CsvAppend":
-                    var csvAppendSource = element.Attribute("Source")?.Value ?? string.Empty;
+                case "csvappend":
+                    var csvAppendSource = GetAttribute(element, "Source") ?? string.Empty;
                     steps.Add(new CsvAppendStep(_sources.GetFilePath(csvAppendSource))
                     {
                         Source = csvAppendSource,
-                        RowVariable = element.Attribute("Row")?.Value ?? string.Empty,
-                        Delimiter = element.Attribute("Delimiter")?.Value ?? ","
+                        RowVariable = GetAttribute(element, "Row") ?? string.Empty,
+                        Delimiter = GetAttribute(element, "Delimiter") ?? ","
                     });
                     break;
 
@@ -105,7 +170,7 @@ public class HandlerParser : IHandlerParser
 
     private static int ParseStatusCode(XElement element)
     {
-        var rawStatus = element.Attribute("Status")?.Value;
+        var rawStatus = GetAttribute(element, "Status");
         return int.TryParse(rawStatus, out var statusCode)
             ? statusCode
             : StatusCodes.Status200OK;
@@ -113,7 +178,60 @@ public class HandlerParser : IHandlerParser
 
     private static string? ParseReturnData(XElement element)
     {
-        var varName = element.Element("Data")?.Attribute("Var")?.Value;
+        var dataElement = GetChild(element, "Data");
+        var varName = dataElement?.Attributes().FirstOrDefault(a =>
+            string.Equals(a.Name.LocalName, "Var", StringComparison.OrdinalIgnoreCase))?.Value;
         return string.IsNullOrWhiteSpace(varName) ? null : $"{{{{{varName}}}}}";
+    }
+
+    private static string ParseSqlTemplate(XElement element)
+    {
+        var fromAttribute = GetAttribute(element, "Query");
+        if (!string.IsNullOrWhiteSpace(fromAttribute))
+        {
+            return fromAttribute;
+        }
+
+        var queryElement = GetChild(element, "Query");
+        if (queryElement is not null)
+        {
+            return SqlXmlQueryBuilder.Build(queryElement);
+        }
+
+        throw new InvalidOperationException(
+            $"{element.Name.LocalName} requires either Query attribute or Query child element.");
+    }
+
+    private static string? GetAttribute(XElement element, string name)
+    {
+        return element.Attributes().FirstOrDefault(a =>
+            string.Equals(a.Name.LocalName, name, StringComparison.OrdinalIgnoreCase))?.Value;
+    }
+
+    private static XElement? GetChild(XElement element, string name)
+    {
+        return element.Elements().FirstOrDefault(e =>
+            string.Equals(e.Name.LocalName, name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string? GetChildValue(XElement element, string childName)
+    {
+        var value = GetChild(element, childName)?.Value;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return value.Trim();
+    }
+
+    private static int ParseIntOrDefault(string? raw, int defaultValue)
+    {
+        return int.TryParse(raw, out var value) ? value : defaultValue;
+    }
+
+    private static int? ParseNullableInt(string? raw)
+    {
+        return int.TryParse(raw, out var value) ? value : null;
     }
 }

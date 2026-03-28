@@ -2,16 +2,74 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:noNamespaceSchemaLocation="../Environement.xsd">
 
+    <!-- Declarations typees (premiere lettre majuscule) -->
+    <Int Name="Count" />
+    <String Name="Prefix" />
+    <String Name="Greeting" />
+    <String Name="ShortGreeting" />
+    <DateTime Name="NowDate" />
 
-    <Set Var="customers" Value=""/>
+    <!-- Set avec valeur simple -->
+    <Set Name="Count">
+      <Value>5</Value>
+    </Set>
 
-    <!-- <SqlQuery Source="MyDB1"
-              Query="SELECT * from CUSTOMER"
-              Var="customers" /> -->
-    <FileRead Source="Test" Var="customers" Delimiter=";" />
+    <Set Name="Prefix">
+      <Value>Hello</Value>
+    </Set>
+
+    <!-- Set d'une variable a partir d'une autre variable -->
+    <Set Name="CountCopy">
+      <Value>
+        <Get Name="Count" />
+      </Value>
+    </Set>
+
+    <!-- Utilitaires dans Value -->
+    <Set Name="Greeting">
+      <Value>
+        <StringFormat Format="{0} #{1}">
+          <Arg><Get Name="Prefix" /></Arg>
+          <Arg><Get Name="Count" /></Arg>
+        </StringFormat>
+      </Value>
+    </Set>
+
+    <Set Name="ShortGreeting">
+      <Value>
+        <StringSubstring Start="0" Length="5">
+          <Arg><Get Name="Greeting" /></Arg>
+        </StringSubstring>
+      </Value>
+    </Set>
+
+    <Set Name="NowDate">
+      <Value>
+        <StringToDateTime>
+          <Arg>2026-03-27T12:00:00Z</Arg>
+        </StringToDateTime>
+      </Value>
+    </Set>
+
+    <!-- Select SQL structure (pas de string SQL brute) -->
+    <SqlQuery Source="MyDB1" Var="Customers">
+      <Query>
+        <Select Table="Customer">
+          <Columns>
+            <ID />
+            <NAME />
+          </Columns>
+          <Where>ID &gt;= {{Count}}</Where>
+          <OrderBy>ID DESC</OrderBy>
+        </Select>
+      </Query>
+    </SqlQuery>
+
+    <!-- Logs -->
+    <Log Message="Greeting={{Greeting}} | Short={{ShortGreeting}} | CountCopy={{CountCopy}}" />
 
     <Return Status="200">
-        <Data Var="customers" />
+        <Data Var="Customers" />
     </Return>
 
 </Handler>
