@@ -12,6 +12,7 @@ public interface IDynamicApiServer
 public class DynamicApiServer : IDynamicApiServer
 {
     private readonly IEndpointDefinitionProvider _endpointDefinitionProvider;
+    private readonly IScriptExecutionService _scriptExecutionService;
     private readonly IHandlerParser _handlerParser;
     private readonly IHandlerExecutor _handlerExecutor;
     private readonly EnvironmentOptions _options;
@@ -19,12 +20,14 @@ public class DynamicApiServer : IDynamicApiServer
 
     public DynamicApiServer(
         IEndpointDefinitionProvider endpointDefinitionProvider,
+        IScriptExecutionService scriptExecutionService,
         IHandlerParser handlerParser,
         IHandlerExecutor handlerExecutor,
         IOptions<EnvironmentOptions> options,
         ILogger<DynamicApiServer> logger)
     {
         _endpointDefinitionProvider = endpointDefinitionProvider;
+        _scriptExecutionService = scriptExecutionService;
         _handlerParser = handlerParser;
         _handlerExecutor = handlerExecutor;
         _options = options.Value;
@@ -82,5 +85,50 @@ public class DynamicApiServer : IDynamicApiServer
 
             _logger.LogInformation("Mapped {Method} {Path} with handler {HandlerPath}", method, endpoint.Path, handlerPath);
         }
+
+        app.MapMethods("/scripts/{scriptName}/run", new[] { "POST", "GET" }, async (HttpContext context, string scriptName) =>
+        {
+            try
+            {
+                context.Request.EnableBuffering();
+                var execution = await _scriptExecutionService.ExecuteByNameAsync(
+                    scriptName,
+                    context.Request,
+                    context.RequestAborted);
+
+                if (!execution.Success)
+                {
+                    return Results.BadRequest(new
+                    {
+                        script = scriptName,
+                        error = execution.Error
+                    });
+                }
+
+                var response = execution.HandlerResponse;
+                if (response is null)
+                {
+                    return Results.Ok(new
+                    {
+                        script = execution.ResolvedScriptName ?? scriptName,
+                        message = "Script executed."
+                    });
+                }
+
+                if (response.Data is null)
+                {
+                    return Results.StatusCode(response.StatusCode);
+                }
+
+                return Results.Json(response.Data, statusCode: response.StatusCode);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Manual script execution failed for '{ScriptName}'.", scriptName);
+                return Results.StatusCode(StatusCodes.Status500InternalServerError);
+            }
+        });
+
+        _logger.LogInformation("Mapped manual script endpoint POST/GET /scripts/{{scriptName}}/run");
     }
 }

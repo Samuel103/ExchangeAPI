@@ -50,7 +50,9 @@ Pointe vers le dossier d'environnement et les fichiers de configuration.
 {
   "WorkingFolder": "/chemin/vers/Environement/",
   "EndpointsFile": "endpoints.json",
-  "ScriptDataFile": "configurations.json"
+  "ScriptDataFile": "configurations.json",
+  "ScriptsFile": "scripts.json",
+  "ScriptFolder": "Script"
 }
 ```
 
@@ -59,6 +61,8 @@ Pointe vers le dossier d'environnement et les fichiers de configuration.
 | `WorkingFolder` | Chemin absolu (ou relatif) vers le dossier contenant `endpoints.json`, `configurations.json` et le sous-dossier `Handler/` |
 | `EndpointsFile` | Nom du fichier de déclaration des routes (défaut : `endpoints.json`) |
 | `ScriptDataFile` | Nom du fichier de sources de données (défaut : `configurations.json`) |
+| `ScriptsFile` | Nom du fichier de planification des scripts (défaut : `scripts.json`) |
+| `ScriptFolder` | Dossier contenant les XML de scripts (défaut : `Script`) |
 
 ---
 
@@ -105,9 +109,42 @@ Chaque source est soit une **base de données SQL** (champ `connectionString`), 
 
 ---
 
+### `scripts.json` (nouveau)
+
+Déclare des scripts planifiés exécutés automatiquement à heure fixe.
+
+```json
+[
+  {
+    "name": "daily-testget-call",
+    "script": "CallTestGet",
+    "time": "09:00",
+    "timeZone": "Europe/Paris",
+    "enabled": true,
+    "runOnStartup": false
+  }
+]
+```
+
+| Champ | Requis | Description |
+|-------|--------|-------------|
+| `name` | ❌ | Nom lisible du job |
+| `script` | ✅ | Nom du fichier XML dans `Script/` (sans `.xml`) |
+| `time` | ✅ | Heure locale du script au format `HH:mm` |
+| `timeZone` | ❌ | Timezone IANA (ex: `Europe/Paris`) |
+| `enabled` | ❌ | Active/désactive le script (défaut `true`) |
+| `runOnStartup` | ❌ | Exécute une fois au démarrage (défaut `false`) |
+
+Les scripts sont relus périodiquement depuis le fichier, donc tu peux ajuster `scripts.json` sans recompiler.
+
+---
+
 ## Handlers XML
 
 Un handler est un fichier XML situé dans `Handler/`. Il décrit une pipeline de steps exécutés séquentiellement à chaque requête. Le schéma est validé par `Environement.xsd`.
+
+Les **scripts planifiés** utilisent la même DSL XML, mais se placent dans le dossier `Script/`.
+Concrètement, un script XML est exécuté avec le même parser/exécuteur que les handlers HTTP.
 
 ```xml
 <Handler
@@ -195,17 +232,17 @@ Lit le contenu complet d'un fichier déclaré dans `configurations.json` et le s
 
 Définit la réponse HTTP retournée au client et **arrête immédiatement** l'exécution des steps suivants.
 
-`Data` peut être :
-- du **JSON inline** : `Data='{"message":"ok"}'`
-- une **référence à une variable** : `Data="{{users}}"` — si la variable contient un objet ou une liste, elle est sérialisée directement
-- absent : retourne uniquement le code HTTP sans corps
+`Data` est une sous-balise optionnelle qui référence une variable du contexte.
+
+Comportement :
+- si `<Data Var="x" />` est présent: la variable `x` est retournée
+- si `Data` est absent: la réponse renvoie seulement le status code
 
 ```xml
 <!-- Retourner une variable SQL -->
-<Return Status="200" Data="{{users}}" />
-
-<!-- Retourner du JSON statique -->
-<Return Status="201" Data='{"created":true}' />
+<Return Status="200">
+  <Data Var="users" />
+</Return>
 
 <!-- Retourner un code sans corps -->
 <Return Status="204" />
@@ -214,13 +251,13 @@ Définit la réponse HTTP retournée au client et **arrête immédiatement** l'e
 | Attribut | Requis | Description |
 |----------|--------|-------------|
 | `Status` | ❌ | Code HTTP (défaut : `200`) |
-| `Data` | ❌ | Corps de la réponse JSON, ou `{{varName}}` |
+| `Data` | ❌ | Sous-balise `<Data Var="nomVariable" />` |
 
 ---
 
 ## Interpolation de variables `{{varName}}`
 
-La syntaxe `{{varName}}` est disponible dans les attributs `Message`, `Value`, `Query` et `Data`.
+La syntaxe `{{varName}}` est disponible dans les attributs/templates comme `Message`, `Value`, `Query`, ainsi que dans les expressions XML (`Arg`, `Left`, `Right`, etc.).
 
 **Comportement :**
 - Si le template est exactement `{{varName}}` (et rien d'autre), la valeur de la variable est retournée **telle quelle** — utile pour passer un objet complet (ex. liste SQL) dans `Return`.
@@ -411,6 +448,285 @@ dotnet run
 ```
 
 Le serveur lit `endpoints.json` au démarrage et enregistre toutes les routes automatiquement. Aucune recompilation n'est nécessaire pour modifier un handler ou ajouter un endpoint.
+
+Le scheduler lit aussi `scripts.json` et exécute les scripts du dossier `Script/` à l'heure configurée.
+
+### Exécution manuelle d'un script via endpoint
+
+Tu peux lancer un script à la demande avec:
+
+- `POST /scripts/{scriptName}/run`
+- `GET /scripts/{scriptName}/run`
+
+`scriptName` peut être:
+
+- la valeur `name` dans `scripts.json`
+- ou la valeur `script` dans `scripts.json`
+
+Exemples:
+
+```bash
+curl -i -X POST http://localhost:5000/scripts/daily-testget-call/run
+curl -i http://localhost:5000/scripts/CallTestGet/run
+```
+
+Le endpoint exécute le même XML que le scheduler, en réutilisant la même pipeline de parsing/exécution.
+
+---
+
+## Guide Complet Par Exemples
+
+Cette section sert de "cookbook" avec des templates copiables.
+
+### A. Handler GET simple
+
+`Environement/endpoints.json`
+
+```json
+[
+  { "path": "/hello", "method": "GET", "handler": "Hello" }
+]
+```
+
+`Environement/Handler/Hello.xml`
+
+```xml
+<Handler xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../Environement.xsd">
+  <Set Name="message" Value="Hello from ExchangeAPI" />
+  <Return Status="200">
+    <Data Var="message" />
+  </Return>
+</Handler>
+```
+
+### B. Handler POST avec BodyRead + SQL
+
+```xml
+<Handler xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../Environement.xsd">
+  <BodyRead Var="body" />
+
+  <SqlExecute Source="MyDB1" Var="rowsAffected">
+    <Query>
+      <Insert Table="Customer">
+        <Values>
+          <NAME>{{Name}}</NAME>
+        </Values>
+      </Insert>
+    </Query>
+  </SqlExecute>
+
+  <Return Status="201">
+    <Data Var="body" />
+  </Return>
+</Handler>
+```
+
+### C. Condition avancée If/Else
+
+```xml
+<Handler xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../Environement.xsd">
+  <Int Name="Amount" Value="140" />
+
+  <If>
+    <Condition>
+      <And>
+        <Arg>
+          <GreaterThan>
+            <Left><Get Name="Amount" /></Left>
+            <Right>100</Right>
+          </GreaterThan>
+        </Arg>
+        <Arg>
+          <LessOrEqual>
+            <Left><Get Name="Amount" /></Left>
+            <Right>200</Right>
+          </LessOrEqual>
+        </Arg>
+      </And>
+    </Condition>
+    <Then>
+      <Set Name="segment" Value="MID" />
+    </Then>
+    <Else>
+      <Set Name="segment" Value="OTHER" />
+    </Else>
+  </If>
+
+  <Return Status="200">
+    <Data Var="segment" />
+  </Return>
+</Handler>
+```
+
+### D. Try/Catch pour sécuriser une requête
+
+```xml
+<Handler xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../Environement.xsd">
+  <Try>
+    <SqlExecute Source="MyDB1" Query="UPDATE UnknownTable SET Value = 1" />
+
+    <Set Name="ok" Value="true" />
+    <Return Status="200">
+      <Data Var="ok" />
+    </Return>
+
+    <Catch Var="error">
+      <Return Status="500">
+        <Data Var="error" />
+      </Return>
+    </Catch>
+  </Try>
+</Handler>
+```
+
+### E. Lecture CSV + ForEach
+
+`test.csv` (exemple)
+
+```text
+id;name
+1;Samuel
+2;Alice
+```
+
+Handler:
+
+```xml
+<Handler xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../Environement.xsd">
+  <Int Name="count" Value="0" />
+  <String Name="names" Value="" />
+
+  <FileRead Source="Test" Var="Rows" Delimiter=";" />
+
+  <ForEach>
+    <In>
+      <Get Name="Rows" />
+    </In>
+    <ItemVar>row</ItemVar>
+
+    <Set Name="count">
+      <Value>
+        <Addition>
+          <Arg><Get Name="count" /></Arg>
+          <Arg>1</Arg>
+        </Addition>
+      </Value>
+    </Set>
+
+    <Set Name="name">
+      <Value>
+        <GetPath>
+          <From><Get Name="row" /></From>
+          <Path>name</Path>
+        </GetPath>
+      </Value>
+    </Set>
+
+    <Set Name="names">
+      <Value>
+        <Concat>
+          <Arg><Get Name="names" /></Arg>
+          <Arg><Get Name="name" /></Arg>
+          <Arg>;</Arg>
+        </Concat>
+      </Value>
+    </Set>
+  </ForEach>
+
+  <Return Status="200">
+    <Data Var="names" />
+  </Return>
+</Handler>
+```
+
+### F. HTTP sortant (GET + POST)
+
+```xml
+<Handler xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../Environement.xsd">
+  <Set Name="query" Value="exchangeapi" />
+
+  <Http-Get>
+    <Url>https://postman-echo.com/get</Url>
+    <Query>
+      <Param Name="q">{{query}}</Param>
+    </Query>
+    <Response Var="getRes" />
+  </Http-Get>
+
+  <Http-Post>
+    <Url>https://postman-echo.com/post</Url>
+    <Headers>
+      <Header Name="Content-Type">application/json</Header>
+    </Headers>
+    <Body>
+      <Concat>
+        <Arg>{"query":"</Arg>
+        <Arg><Get Name="query" /></Arg>
+        <Arg>"}</Arg>
+      </Concat>
+    </Body>
+    <Response Var="postRes" />
+  </Http-Post>
+
+  <Return Status="200">
+    <Data Var="postRes" />
+  </Return>
+</Handler>
+```
+
+### G. Script planifié qui appelle un endpoint
+
+`Environement/scripts.json`
+
+```json
+[
+  {
+    "name": "daily-testget-call",
+    "script": "CallTestGet",
+    "time": "09:00",
+    "timeZone": "Europe/Paris",
+    "enabled": true,
+    "runOnStartup": false
+  }
+]
+```
+
+`Environement/Script/CallTestGet.xml`
+
+```xml
+<Handler xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../Environement.xsd">
+  <Set Name="baseUrl" Value="http://localhost:5000" />
+
+  <Http-Get>
+    <Url>{{baseUrl}}/testget</Url>
+    <Response Var="apiResponse" />
+  </Http-Get>
+
+  <Return Status="200">
+    <Data Var="apiResponse" />
+  </Return>
+</Handler>
+```
+
+### H. Lancer le script manuellement via endpoint
+
+```bash
+curl -i -X POST http://localhost:5000/scripts/daily-testget-call/run
+curl -i http://localhost:5000/scripts/CallTestGet/run
+```
+
+### I. Vérification rapide end-to-end
+
+```bash
+cd ExchangeAPI
+dotnet run
+
+curl -i http://localhost:5000/testget
+curl -i -X POST http://localhost:5000/testpost -H "Content-Type: application/json" -d '{"Name":"Samuel"}'
+curl -i http://localhost:5000/test-utilities
+curl -i http://localhost:5000/test-http-trycatch
+curl -i -X POST http://localhost:5000/scripts/daily-testget-call/run
+```
 
 ---
 

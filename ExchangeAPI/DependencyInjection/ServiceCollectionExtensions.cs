@@ -23,9 +23,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISourceRegistry, SourceRegistry>();
 
         services.AddSingleton<IEndpointDefinitionProvider, EndpointParser>();
+        services.AddSingleton<IScriptDefinitionProvider, ScriptDefinitionParser>();
+        services.AddSingleton<IScriptExecutionService, ScriptExecutionService>();
         services.AddSingleton<IHandlerParser, HandlerParser>();
         services.AddSingleton<IHandlerExecutor, HandlerExecutor>();
         services.AddSingleton<IDynamicApiServer, DynamicApiServer>();
+        services.AddHostedService<ScheduledScriptWorker>();
 
         return services;
     }

@@ -1,0 +1,43 @@
+<Handler
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="../Environement.xsd">
+
+    <Set Name="baseUrl" Value="http://localhost:5000" />
+
+    <Http-Get>
+      <Url>{{baseUrl}}/testget</Url>
+      <Headers>
+        <Header Name="Accept">application/json</Header>
+      </Headers>
+      <Response Var="apiResponse" />
+    </Http-Get>
+
+    <Set Name="statusCode">
+      <Value>
+        <GetPath>
+          <From><Get Name="apiResponse" /></From>
+          <Path>statusCode</Path>
+        </GetPath>
+      </Value>
+    </Set>
+
+    <If>
+      <Condition>
+        <Equals>
+          <Left><Get Name="statusCode" /></Left>
+          <Right>200</Right>
+        </Equals>
+      </Condition>
+      <Then>
+        <Log Message="Scheduled script success: status={{statusCode}}" />
+      </Then>
+      <Else>
+        <Log Message="Scheduled script non-success status={{statusCode}}" />
+      </Else>
+    </If>
+
+    <Return Status="200">
+      <Data Var="apiResponse" />
+    </Return>
+
+</Handler>

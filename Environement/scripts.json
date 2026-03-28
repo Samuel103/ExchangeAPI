@@ -1,0 +1,10 @@
+[
+	{
+		"name": "daily-testget-call",
+		"script": "CallTestGet",
+		"time": "09:00",
+		"timeZone": "Europe/Paris",
+		"enabled": true,
+		"runOnStartup": false
+	}
+]
