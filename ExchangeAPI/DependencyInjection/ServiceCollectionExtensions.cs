@@ -11,6 +11,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddExchangeApi(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<EnvironmentOptions>(configuration);
+        services.AddHttpClient();
 
         // Load sources (DB connections, file paths) from configurations.json
         var workingFolder = configuration["WorkingFolder"] ?? "Scripts";

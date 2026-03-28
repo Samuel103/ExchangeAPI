@@ -229,6 +229,150 @@ La syntaxe `{{varName}}` est disponible dans les attributs `Message`, `Value`, `
 
 ---
 
+## DSL avancée (nouveautés)
+
+Cette version ajoute des balises de contrôle de flux, des appels HTTP externes et des fonctions utilitaires orientées sous-balises (pas uniquement des attributs).
+
+### 1) Contrôle de flux
+
+#### `If` / `Else`
+
+```xml
+<If>
+  <Condition>
+    <GreaterThan>
+      <Left><Get Name="total" /></Left>
+      <Right>100</Right>
+    </GreaterThan>
+  </Condition>
+  <Then>
+    <Set Name="segment" Value="VIP" />
+  </Then>
+  <Else>
+    <Set Name="segment" Value="STANDARD" />
+  </Else>
+</If>
+```
+
+#### `Try` / `Catch`
+
+```xml
+<Try>
+  <SqlExecute Source="MyDB1" Query="UPDATE T SET Flag = 1" Var="rows" />
+  <Catch Var="error">
+    <Log Message="Erreur={{error}}" />
+    <Return Status="500">
+      <Data Var="error" />
+    </Return>
+  </Catch>
+</Try>
+```
+
+#### `ForEach`
+
+```xml
+<ForEach>
+  <In>
+    <Get Name="Rows" />
+  </In>
+  <ItemVar>row</ItemVar>
+  <IndexVar>index</IndexVar>
+
+  <Set Name="count">
+    <Value>
+      <Addition>
+        <Arg><Get Name="count" /></Arg>
+        <Arg>1</Arg>
+      </Addition>
+    </Value>
+  </Set>
+</ForEach>
+```
+
+### 2) Appels HTTP externes
+
+#### `Http-Get`
+
+```xml
+<Http-Get>
+  <Url>https://postman-echo.com/get</Url>
+  <Query>
+    <Param Name="q">{{query}}</Param>
+  </Query>
+  <Response Var="getResponse" />
+</Http-Get>
+```
+
+#### `Http-Post`
+
+```xml
+<Http-Post>
+  <Url>https://postman-echo.com/post</Url>
+  <Headers>
+    <Header Name="Content-Type">application/json</Header>
+  </Headers>
+  <Body>
+    <Concat>
+      <Arg>{"name":"</Arg>
+      <Arg><Get Name="userName" /></Arg>
+      <Arg>"}</Arg>
+    </Concat>
+  </Body>
+  <Response Var="postResponse" />
+</Http-Post>
+```
+
+La variable de réponse contient:
+- `statusCode`
+- `isSuccess`
+- `headers`
+- `body` (JSON converti si possible)
+- `text` (brut)
+
+### 3) Fonctions utilitaires d'expression
+
+Tu peux les utiliser partout où une sous-balise `<Value>` est supportée (ex: `Set`, `If/Condition`, etc.).
+
+- Math: `Addition`, `Substract` (et alias `Subtract`), `Multiply`, `Divide`
+- Texte: `Concat`, `StringFormat`, `StringSubstring`
+- Conversion: `StringToInt`, `IntToString`, `StringToDateTime`
+- Comparaison: `Equals`, `NotEquals`, `GreaterThan`, `GreaterOrEqual`, `LessThan`, `LessOrEqual`
+- Logique: `And`, `Or`, `Not`, `Coalesce`
+- Accès structuré: `GetPath` / `GetField`
+
+Exemple `GetPath`:
+
+```xml
+<Set Name="statusCode">
+  <Value>
+    <GetPath>
+      <From><Get Name="httpResponse" /></From>
+      <Path>statusCode</Path>
+    </GetPath>
+  </Value>
+</Set>
+```
+
+---
+
+## Endpoints de test ajoutés
+
+Dans `Environement/endpoints.json`, deux endpoints de test supplémentaires sont prêts:
+
+- `GET /test-utilities` -> `Handler/AdvancedUtilities.xml`
+- `GET /test-http-trycatch` -> `Handler/HttpTryCatchDemo.xml`
+
+### Commandes de test
+
+```bash
+curl -i http://localhost:5000/test-utilities
+curl -i http://localhost:5000/test-http-trycatch
+```
+
+Si ton app écoute sur un autre port, remplace `5000`.
+
+---
+
 ## Exemple complet
 
 **`endpoints.json`**

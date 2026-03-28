@@ -1,0 +1,96 @@
+<Handler 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="../Environement.xsd">
+
+    <Set Name="query" Value="exchangeapi" />
+
+    <Try>
+      <Http-Post>
+        <Url>https://postman-echo.com/post</Url>
+        <Headers>
+          <Header Name="Accept">application/json</Header>
+          <Header Name="Content-Type">application/json</Header>
+        </Headers>
+        <Body>
+          <Concat>
+            <Arg>{"source":"ExchangeAPI","query":"</Arg>
+            <Arg><Get Name="query" /></Arg>
+            <Arg>"}</Arg>
+          </Concat>
+        </Body>
+        <Response Var="postResponse" />
+      </Http-Post>
+
+      <Http-Get>
+        <Url>https://postman-echo.com/get</Url>
+        <Query>
+          <Param Name="q">{{query}}</Param>
+        </Query>
+        <Response Var="getResponse" />
+      </Http-Get>
+
+      <Set Name="postStatus">
+        <Value>
+          <GetPath>
+            <From><Get Name="postResponse" /></From>
+            <Path>statusCode</Path>
+          </GetPath>
+        </Value>
+      </Set>
+
+      <Set Name="getStatus">
+        <Value>
+          <GetPath>
+            <From><Get Name="getResponse" /></From>
+            <Path>statusCode</Path>
+          </GetPath>
+        </Value>
+      </Set>
+
+      <If>
+        <Condition>
+          <And>
+            <Arg>
+              <Equals>
+                <Left><Get Name="postStatus" /></Left>
+                <Right>200</Right>
+              </Equals>
+            </Arg>
+            <Arg>
+              <Equals>
+                <Left><Get Name="getStatus" /></Left>
+                <Right>200</Right>
+              </Equals>
+            </Arg>
+          </And>
+        </Condition>
+        <Then>
+          <Set Name="responseJson" Value='{"status":"ok","postStatus":"{{postStatus}}","getStatus":"{{getStatus}}"}' />
+          <Return Status="200">
+            <Data Var="responseJson" />
+          </Return>
+        </Then>
+        <Else>
+          <Set Name="responseJson" Value='{"status":"upstream_error","postStatus":"{{postStatus}}","getStatus":"{{getStatus}}"}' />
+          <Return Status="502">
+            <Data Var="responseJson" />
+          </Return>
+        </Else>
+      </If>
+      <Catch Var="httpError">
+        <Set Name="errorMessage">
+          <Value>
+            <GetPath>
+              <From><Get Name="httpError" /></From>
+              <Path>message</Path>
+            </GetPath>
+          </Value>
+        </Set>
+        <Set Name="responseJson" Value='{"status":"exception","message":"{{errorMessage}}"}' />
+        <Return Status="500">
+          <Data Var="responseJson" />
+        </Return>
+      </Catch>
+    </Try>
+
+</Handler>

@@ -8,5 +8,15 @@
     "path": "/testpost",
     "method": "POST",
     "handler": "Post"
+  },
+  {
+    "path": "/test-utilities",
+    "method": "GET",
+    "handler": "AdvancedUtilities"
+  },
+  {
+    "path": "/test-http-trycatch",
+    "method": "GET",
+    "handler": "HttpTryCatchDemo"
   }
 ]

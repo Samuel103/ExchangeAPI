@@ -237,6 +237,9 @@
             </xs:complexType>
           </xs:element>
 
+          <!-- Permet l'extension de la DSL (if/else, try/catch, http-get/post, foreach, etc.). -->
+          <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+
         </xs:choice>
       </xs:sequence>
     </xs:complexType>
@@ -265,6 +268,8 @@
         <xs:element name="stringtodatetime" type="unaryExpression"/>
         <xs:element name="StringSubstring" type="substringExpression"/>
         <xs:element name="stringsubstring" type="substringExpression"/>
+        <!-- Expressions utilitaires étendues (math, comparaison, logique, concat...). -->
+        <xs:any minOccurs="0" maxOccurs="1" processContents="lax"/>
       </xs:choice>
     </xs:sequence>
   </xs:complexType>

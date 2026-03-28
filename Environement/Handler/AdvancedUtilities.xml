@@ -1,0 +1,97 @@
+<Handler 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="../Environement.xsd">
+
+    <Int Name="A" Value="10" />
+    <Int Name="B" Value="4" />
+    <Int Name="rowCount" Value="0" />
+    <String Name="allNames" Value="" />
+
+    <Set Name="sum">
+      <Value>
+        <Addition>
+          <Arg><Get Name="A" /></Arg>
+          <Arg><Get Name="B" /></Arg>
+        </Addition>
+      </Value>
+    </Set>
+
+    <Set Name="difference">
+      <Value>
+        <Substract>
+          <Arg><Get Name="A" /></Arg>
+          <Arg><Get Name="B" /></Arg>
+        </Substract>
+      </Value>
+    </Set>
+
+    <FileRead Source="Test" Var="Rows" Delimiter=";" />
+
+    <ForEach>
+      <In>
+        <Get Name="Rows" />
+      </In>
+      <ItemVar>row</ItemVar>
+      <IndexVar>index</IndexVar>
+
+      <Set Name="rowCount">
+        <Value>
+          <Addition>
+            <Arg><Get Name="rowCount" /></Arg>
+            <Arg>1</Arg>
+          </Addition>
+        </Value>
+      </Set>
+
+      <Set Name="currentName">
+        <Value>
+          <GetPath>
+            <From><Get Name="row" /></From>
+            <Path>name</Path>
+          </GetPath>
+        </Value>
+      </Set>
+
+      <Set Name="allNames">
+        <Value>
+          <Concat>
+            <Arg><Get Name="allNames" /></Arg>
+            <Arg><Get Name="currentName" /></Arg>
+            <Arg>,</Arg>
+          </Concat>
+        </Value>
+      </Set>
+    </ForEach>
+
+    <If>
+      <Condition>
+        <And>
+          <Arg>
+            <GreaterThan>
+              <Left><Get Name="sum" /></Left>
+              <Right>10</Right>
+            </GreaterThan>
+          </Arg>
+          <Arg>
+            <Equals>
+              <Left><Get Name="rowCount" /></Left>
+              <Right>1</Right>
+            </Equals>
+          </Arg>
+        </And>
+      </Condition>
+      <Then>
+        <Set Name="status" Value="OK" />
+      </Then>
+      <Else>
+        <Set Name="status" Value="NOT_OK" />
+      </Else>
+    </If>
+
+    <Set Name="responseJson" Value='{"sum":"{{sum}}","difference":"{{difference}}","rowCount":"{{rowCount}}","status":"{{status}}"}' />
+
+    <Return Status="200">
+      <Data Var="responseJson" />
+    </Return>
+
+</Handler>
