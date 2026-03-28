@@ -1,0 +1,21 @@
+<Handler 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="../Environement.xsd">
+
+    <!-- Lit le body JSON. Ex: {"name":"Alice","email":"alice@example.com"} -->
+    <!-- Les champs sont disponibles directement : {{name}}, {{email}}, etc. -->
+    <BodyRead Var="body" />
+
+    <!-- Option A : insérer en base de données -->
+    <SqlExecute Source="MyDB1"
+                Query="INSERT INTO Customer (NAME) VALUES ({{Name}})"
+                Var="rowsAffected" />
+
+    <!-- Option B : ajouter au CSV (commenter l'une ou l'autre selon le besoin) -->
+    <!-- <CsvAppend Source="MyFile1" Row="body" Delimiter="," /> -->
+
+    <Return Status="201">
+        <Data Var="body" />
+    </Return>
+
+</Handler>

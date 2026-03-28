@@ -5,9 +5,10 @@
 
     <Set Var="customers" Value=""/>
 
-    <SqlQuery Source="MyDB1"
+    <!-- <SqlQuery Source="MyDB1"
               Query="SELECT * from CUSTOMER"
-              Var="customers" />
+              Var="customers" /> -->
+    <FileRead Source="Test" Var="customers" Delimiter=";" />
 
     <Return Status="200">
         <Data Var="customers" />

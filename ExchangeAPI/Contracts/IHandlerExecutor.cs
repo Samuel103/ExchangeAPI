@@ -5,5 +5,8 @@ namespace ExchangeAPI.Contracts;
 
 public interface IHandlerExecutor
 {
-    Task<HandlerResponse> ExecuteAsync(IEnumerable<IHandlerStep> steps, CancellationToken cancellationToken = default);
+    Task<HandlerResponse> ExecuteAsync(
+        IEnumerable<IHandlerStep> steps,
+        HttpRequest? request = null,
+        CancellationToken cancellationToken = default);
 }

@@ -31,16 +31,49 @@
             </xs:complexType>
           </xs:element>
 
-          <!-- Lit le contenu d'un fichier entier et le stocke dans une variable. -->
+          <!-- Lit un fichier et le stocke dans une variable. -->
+          <!-- Fichiers .csv : chaque ligne devient un objet JSON, la 1re ligne sert d'en-têtes. -->
+          <!-- Delimiter est optionnel : défaut "," pour les .csv, sinon stockage texte brut. -->
           <xs:element name="FileRead">
             <xs:complexType>
-              <xs:attribute name="Source" type="xs:string" use="required"/>
-              <xs:attribute name="Var"    type="xs:string" use="required"/>
+              <xs:attribute name="Source"    type="xs:string" use="required"/>
+              <xs:attribute name="Var"       type="xs:string" use="required"/>
+              <xs:attribute name="Delimiter" type="xs:string" use="optional"/>
             </xs:complexType>
           </xs:element>
 
           <!-- Retourne la réponse HTTP. Arrête l'exécution des steps suivants. -->
-          <!-- <Data Var="nomVariable"/> référence une variable du contexte. -->
+            <!-- Lit le body JSON d'une requête POST/PUT et expose les champs comme variables. -->
+            <!-- Le body complet est aussi stocké sous Var. -->
+            <xs:element name="BodyRead">
+              <xs:complexType>
+                <xs:attribute name="Var" type="xs:string" use="required"/>
+              </xs:complexType>
+            </xs:element>
+
+            <!-- Exécute du SQL sans résultat (INSERT, UPDATE, DELETE). -->
+            <!-- {{varName}} dans Query devient un paramètre SQL sécurisé. -->
+            <!-- Var optionnel : reçoit le nombre de lignes affectées. -->
+            <xs:element name="SqlExecute">
+              <xs:complexType>
+                <xs:attribute name="Source" type="xs:string" use="required"/>
+                <xs:attribute name="Query"  type="xs:string" use="required"/>
+                <xs:attribute name="Var"    type="xs:string" use="optional"/>
+              </xs:complexType>
+            </xs:element>
+
+            <!-- Ajoute une ligne à un fichier CSV. Crée le fichier et l'en-tête si inexistant. -->
+            <!-- Row pointe vers une variable Dictionary du contexte. -->
+            <xs:element name="CsvAppend">
+              <xs:complexType>
+                <xs:attribute name="Source"    type="xs:string" use="required"/>
+                <xs:attribute name="Row"       type="xs:string" use="required"/>
+                <xs:attribute name="Delimiter" type="xs:string" use="optional"/>
+              </xs:complexType>
+            </xs:element>
+
+            <!-- Retourne la réponse HTTP. Arrête l'exécution des steps suivants. -->
+            <!-- <Data Var="nomVariable"/> référence une variable du contexte. -->
           <xs:element name="Return">
             <xs:complexType>
               <xs:sequence>

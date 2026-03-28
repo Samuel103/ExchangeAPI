@@ -6,9 +6,12 @@ namespace ExchangeAPI.Parser;
 
 public class HandlerExecutor : IHandlerExecutor
 {
-    public async Task<HandlerResponse> ExecuteAsync(IEnumerable<IHandlerStep> steps, CancellationToken cancellationToken = default)
+    public async Task<HandlerResponse> ExecuteAsync(
+        IEnumerable<IHandlerStep> steps,
+        HttpRequest? request = null,
+        CancellationToken cancellationToken = default)
     {
-        var context = new HandlerExecutionContext();
+        var context = new HandlerExecutionContext(request);
 
         foreach (var step in steps)
         {

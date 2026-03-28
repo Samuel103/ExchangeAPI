@@ -3,8 +3,8 @@
         "MyDB1" : {
             "connectionstring" : "Server=localhost,1433;Database=EXCHANGE;User Id=sa;Password=YourStrong!Passw0rd;Encrypt=True;TrustServerCertificate=True;"
         },
-        "MyFile1" : {
-            "path" : "../Inbound.csv"
+        "Test" : {
+            "path" : "test.csv"
         }
     }
 }

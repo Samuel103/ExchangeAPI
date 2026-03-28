@@ -57,17 +57,46 @@ public class HandlerParser : IHandlerParser
                     steps.Add(new FileReadStep(_sources.GetFilePath(fileSource))
                     {
                         Source = fileSource,
-                        OutputVariable = element.Attribute("Var")?.Value ?? string.Empty
+                        OutputVariable = element.Attribute("Var")?.Value ?? string.Empty,
+                        Delimiter = element.Attribute("Delimiter")?.Value
                     });
                     break;
 
                 case "Return":
-                    steps.Add(new ReturnStep
+                        steps.Add(new ReturnStep
+                        {
+                            StatusCode = ParseStatusCode(element),
+                            DataTemplate = ParseReturnData(element)
+                        });
+                        break;
+
+                    case "BodyRead":
+                    steps.Add(new BodyReadStep
                     {
-                        StatusCode = ParseStatusCode(element),
-                        DataTemplate = ParseReturnData(element)
+                        OutputVariable = element.Attribute("Var")?.Value ?? "body"
                     });
                     break;
+
+                case "SqlExecute":
+                    var sqlExecSource = element.Attribute("Source")?.Value ?? string.Empty;
+                    steps.Add(new SqlExecuteStep(_sources.GetConnectionString(sqlExecSource))
+                    {
+                        Source = sqlExecSource,
+                        QueryTemplate = element.Attribute("Query")?.Value ?? string.Empty,
+                        OutputVariable = element.Attribute("Var")?.Value
+                    });
+                    break;
+
+                case "CsvAppend":
+                    var csvAppendSource = element.Attribute("Source")?.Value ?? string.Empty;
+                    steps.Add(new CsvAppendStep(_sources.GetFilePath(csvAppendSource))
+                    {
+                        Source = csvAppendSource,
+                        RowVariable = element.Attribute("Row")?.Value ?? string.Empty,
+                        Delimiter = element.Attribute("Delimiter")?.Value ?? ","
+                    });
+                    break;
+
             }
         }
 

@@ -10,6 +10,13 @@ public class HandlerExecutionContext
 
     public Dictionary<string, object?> Variables { get; } = new(StringComparer.OrdinalIgnoreCase);
 
+    public HttpRequest? HttpRequest { get; }
+
+    public HandlerExecutionContext(HttpRequest? httpRequest = null)
+    {
+        HttpRequest = httpRequest;
+    }
+
     public void SetVariable(string name, object? value) => Variables[name] = value;
 
     public object? GetVariable(string name) =>

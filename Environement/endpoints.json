@@ -1,7 +1,12 @@
 [
   {
-    "path": "/hello",
+    "path": "/testget",
     "method": "GET",
-    "handler": "Test"
+    "handler": "Get"
+  },
+  {
+    "path": "/testpost",
+    "method": "POST",
+    "handler": "Post"
   }
 ]
